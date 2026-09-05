@@ -1,0 +1,146 @@
+-- ================================================================= --
+-- CONFIGURATION
+-- ================================================================= --
+-- 5 Randomly Generated Keys (rotates every 7 days and loops back):
+local KEYS = {
+    [1] = "K9xP-2mR7-vL4N-8qW1", -- Active Week 1
+    [2] = "J3bT-9zF5-cX1V-7kM2", -- Active Week 2
+    [3] = "H8wQ-4pL1-sY6Z-3nD9", -- Active Week 3
+    [4] = "C5vB-8mK2-tR9P-1xJ7", -- Active Week 4
+    [5] = "G2nF-6qW9-yL3X-5sM4"  -- Active Week 5
+}
+
+-- Start timestamp for the 5-week cycle (September 5, 2026)
+local START_TIMESTAMP = 1788625200 
+
+-- Target script to load upon successful key entry
+local SCRIPT_URL = "https://raw.githubusercontent.com/UCT-hub/main/refs/heads/main/redz-v2"
+local WEEK_IN_SECONDS = 7 * 86400 -- 7 days in seconds
+
+-- ================================================================= --
+-- KEY ROTATION & EXECUTION LOGIC
+-- ================================================================= --
+local function GetCurrentActiveKey()
+    local currentTime = os.time()
+    local elapsedTime = currentTime - START_TIMESTAMP
+    
+    if elapsedTime < 0 then
+        return KEYS[1]
+    end
+
+    local currentPeriod = math.floor(elapsedTime / WEEK_IN_SECONDS)
+    local keyIndex = (currentPeriod % #KEYS) + 1
+    
+    return KEYS[keyIndex]
+end
+
+local function LoadMainScript()
+    print("Key accepted! Fetching and executing main script...")
+    local success, err = pcall(function()
+        loadstring(game:HttpGet(SCRIPT_URL))()
+    end)
+    if not success then
+        warn("Failed to load target script:", err)
+    end
+end
+
+-- ================================================================= --
+-- GUI CREATION
+-- ================================================================= --
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+if PlayerGui:FindFirstChild("KeySystemGui") then
+    PlayerGui.KeySystemGui:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "KeySystemGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 320, 0, 180)
+MainFrame.Position = UDim2.new(0.5, -160, 0.5, -90)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 8)
+UICorner.Parent = MainFrame
+
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Name = "TitleLabel"
+TitleLabel.Size = UDim2.new(1, 0, 0, 40)
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Text = "Key System"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 18
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.Parent = MainFrame
+
+local KeyInput = Instance.new("TextBox")
+KeyInput.Name = "KeyInput"
+KeyInput.Size = UDim2.new(0.85, 0, 0, 35)
+KeyInput.Position = UDim2.new(0.075, 0, 0.3, 0)
+KeyInput.BackgroundColor3 = Color3.fromRGB(45, 45, 50)
+KeyInput.BorderSizePixel = 0
+KeyInput.PlaceholderText = "Enter Current Key..."
+KeyInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+KeyInput.Text = ""
+KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyInput.TextSize = 14
+KeyInput.Font = Enum.Font.SourceSans
+KeyInput.Parent = MainFrame
+
+local InputCorner = Instance.new("UICorner")
+InputCorner.CornerRadius = UDim.new(0, 6)
+InputCorner.Parent = KeyInput
+
+local SubmitBtn = Instance.new("TextButton")
+SubmitBtn.Name = "SubmitBtn"
+SubmitBtn.Size = UDim2.new(0.85, 0, 0, 35)
+SubmitBtn.Position = UDim2.new(0.075, 0, 0.6, 0)
+SubmitBtn.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+SubmitBtn.BorderSizePixel = 0
+SubmitBtn.Text = "Submit Key"
+SubmitBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SubmitBtn.TextSize = 15
+SubmitBtn.Font = Enum.Font.SourceSansBold
+SubmitBtn.Parent = MainFrame
+
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = UDim.new(0, 6)
+BtnCorner.Parent = SubmitBtn
+
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Name = "StatusLabel"
+StatusLabel.Size = UDim2.new(1, 0, 0, 20)
+StatusLabel.Position = UDim2.new(0, 0, 0.82, 0)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = ""
+StatusLabel.TextColor3 = Color3.fromRGB(255, 75, 75)
+StatusLabel.TextSize = 12
+StatusLabel.Font = Enum.Font.SourceSans
+StatusLabel.Parent = MainFrame
+
+-- ================================================================= --
+-- SUBMIT HANDLER
+-- ================================================================= --
+SubmitBtn.MouseButton1Click:Connect(function()
+    local activeKey = GetCurrentActiveKey()
+    
+    if KeyInput.Text == activeKey then
+        StatusLabel.TextColor3 = Color3.fromRGB(75, 255, 75)
+        StatusLabel.Text = "Success! Loading script..."
+        task.wait(1)
+        ScreenGui:Destroy()
+        LoadMainScript()
+    else
+        StatusLabel.TextColor3 = Color3.fromRGB(255, 75, 75)
+        StatusLabel.Text = "Invalid or expired key."
+    end
+end)
